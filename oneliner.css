@@ -1,0 +1,25 @@
+html, body {
+    margin:0;
+    color:#999;
+    text-align: center;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    height:90%;
+}
+body::after{
+    content: "";
+    position: absolute;
+    top:0;
+    left:0;
+    bottom: 0;
+    right: 0;
+    background-image:url(open_bg.jpg);
+    background-size: cover;
+    z-index: -1;
+    background-position:center center;
+    opacity: 0.05;
+}
+div {
+    font-size:100px;
+}
