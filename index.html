@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CQD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=1">
+<link rel="icon" type="image/png" href="favicon.png" />
+<script type='application/ld+json'>
+{"@context":"http:\/\/schema.org","@type":"Person","name":"CQD","jobTitle":["\u5f8c\u7aef\u5de5\u7a0b\u5e2b","\u5c0f\u5973\u5b69\u6bba\u624b","\u93df\u5c4e\u5b98"],"knowsAbout":["PHP","HTML","Internet","HTTP"],"description":"CQD \u662f\u4e00\u7a2e\u5947\u5999\u7684\u751f\u7269\u3002\u5e38\u51fa\u6c92\u5728\u7db2\u8def\u4e0a\u3002\u6700\u8457\u540d\u4e8b\u8e5f\u662f\u5728\u4e09\u5341\u79d2\u5167\u63a5\u6536\u4e86\u4e09\u842c\u4eba\u5206\u7684\u611b\u800c\u8b8a\u8eab\u6210\u70ba\u5de8\u5927\u6a5f\u5668\u4eba\u3002\n\nCQD \u71b1\u611b\u5de8\u5927\u5b87\u5b99\u6230\u8266\uff0c\u537b\u6253\u8457\u53cd\u6230\u6d3e\u7684\u65d7\u5e5f\uff0c\u6574\u5929\u8ffd\u8457\u5c0f\u8c93\u54aa\u3001\u5c0f\u5973\u5b69\u3001\u8ddf\u6253\u626e\u6210\u5c0f\u8c93\u54aa\u7684\u5c0f\u5973\u5b69\u8dd1\u3002\u56e0\u6b64\u4e00\u822c\u8a8d\u70ba CQD \u662f\u4e00\u7a2e\u81ea\u6211\u77db\u76fe\u7684\u8b8a\u614b\u751f\u7269\u3002\n\n\u95dc\u65bc CQD \u7684\u5916\u578b\uff0c\u66fe\u6709\u9019\u6a23\u7684\u63cf\u8ff0\uff1a\u8eab\u9577\u56db\u5341\u4e08\uff0c\u7709\u9593\u4e5d\u5c3a\uff0c\u773c\u5982\u9285\u947c\uff0c\u53e3\u5410\u767d\u5149\uff0c\u8173\u8e0f\u706b\u96f2\uff0c\u884c\u5982\u96f7\u9cf4\u3002","email":"mailto:cqd@hiigara.net","url":"https:\/\/cqd.tw","sameAs":["https:\/\/github.com\/CQD","https:\/\/plurk.com\/CQD","https:\/\/medium.com\/@CQD"]}</script>
+<style>
+html, body {
+    margin:0;
+    color:#999;
+    text-align: center;
+    font-size:16px;
+    line-height:150%;
+    background-color:#e3e6e9;
+    background-image: linear-gradient(#e3e6e9, #a3a6a9);
+    min-height:100vh;
+}
+body{
+    padding:20px 0 90px;
+}
+a, a:link, a:visited{
+    text-decoration:none;
+    color:#fff;
+}
+
+
+.card {
+    background-color:#353535;
+    max-width:550px;
+    margin:10px auto;
+    box-sizing:border-box;
+    padding:1em;
+    color:#fff;
+    box-shadow: 0 19px 38px rgba(0,0,0,0.3), 0 15px 12px rgba(0,0,0,0.22);
+    position:relative;
+    overflow:hidden;
+    border-radius:3px;
+}
+.profile{
+    margin-bottom: 30px;
+    padding-top:calc(170px + 140px - 100px + 30px);
+}
+.profile div{
+    max-width:16em;
+    margin:30px auto;
+}
+
+div.profile_header{
+    position:absolute;
+    max-width:100%;
+    margin:0;
+    height:170px;
+    left:0;
+    top:0;
+    background-color: #999;
+    width:100%;
+    background-image: linear-gradient(rgba(53,53,53,0), rgba(53,53,53,0), rgba(53,53,53,100)), url('bg.jpg');
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size:cover;
+    opacity:0.35;
+    filter:blur(0.9px);
+    z-index:1;
+}
+.profile_avatar{
+    position:absolute;
+    top:calc(170px - 100px);
+    left:calc(50% - 70px);
+    border-radius:100%;
+    border: 3px solid #fff;
+    width:140px;
+    height:140px;
+    z-index:2;
+}
+
+.card.btn{
+    padding:0;
+}
+.card.btn a{
+    display:block;
+    padding:1em;
+}
+
+a.btn{
+    display:inline-block;
+    line-height:27px;
+    height:27px;
+    margin:10px;
+    width:100px;
+    border-radius:5px;
+    background-color:white;
+    color:#333;
+    font-family:monospace;
+}
+
+@media screen and (max-width: 520px) {
+    body{
+        padding:0 0 20px;
+    }
+    .card{
+        margin:10px;
+    }
+    .profile{
+        margin-bottom: 30px;
+    }
+}
+</style>
+</head>
+<body>
+<div class='card profile'>
+<div class='profile_header'></div>
+<img class='profile_avatar' src='avatar.png'>
+<div style='font-size:30px;margin-top:5px'>CQD</div>
+<div>
+2009 年起寫程式維生<br>
+做過 DAU 百萬的服務後端工程<br>
+寫過 PHP<br>
+常常被<a href='https://www.google.com.tw/search?q=cat&tbm=isch'>貓</a>踩
+</div>
+
+<a class="btn" href="https://github.com/CQD">Github</a>
+<a class="btn" href="https://plurk.com/CQD">Plurk</a>
+<a class="btn" href="https://medium.com/@CQD">Medium</a>
+<a class="btn" href="mailto:cqd@hiigara.net">Email</a>
+
+</div>
+
+<div class='card btn'><a href='https://xkcd.tw'>xkcd 中文翻譯</a></div>
+<div class='card btn'><a href='https://hw.hiigara.net'>萬艦齊發</a></div>
+<div class='card btn'><a href='https://medium.com/@CQD/3fdc14b9f01e'>頂天立地：愛孩子就要支持蘿莉控</a></div>
+<div class='card btn'><a href='https://feed.cqd.tw/'>非官方 Feed</a></div>
+<div class='card btn'><a href='https://textgen.cqd.tw/'>中文假文產生器</a></div>
+</body>
+</html>
