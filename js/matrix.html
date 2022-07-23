@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Matrix digital rain</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=1">
+<style>
+:root,html,body{
+    margin:0;
+    padding:0;
+    background-color: black;
+}
+#cv{
+    width:100%;
+    height:100%;
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+function randomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function sample(ary) {
+  return ary[randomInt(ary.length)];
+}
+</script>
+<script>
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+
+const FONT_SIZE = 18;
+const STEP_MS = 66;
+
+const GRID_SIZE = FONT_SIZE + 4
+
+let texts = [
+    "黑棕紅橙黃綠藍紫灰白",
+    "一二三木頭人",
+    "頂天立地愛孩子就要支持蘿莉控",
+    "上車尿尿下車睡覺",
+    "一月台要發車的是開往南港的八七六次請要上車的旅客前往搭乘",
+
+    "WHY SO SERIOUS",
+    "ナマムギ",
+    "ナマゴメ",
+    "ナマタマゴ",
+    "★","❤",
+
+    "方法可以設定指",
+    "我也是跟我多有機了不比較少開心的是有想要昨天的",
+    "今超了這樣斯問題會在不會有該是找我沒關係夜晚黑關係的",
+    "人一的以要社在我的說什麼",
+    "的工作是流行子也會一",
+];
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    ctx.width = window.innerWidth
+    ctx.height = window.innerHeight
+
+    ctx.font = `${FONT_SIZE}px sans-serif`;
+    ctx.textAlign = 'center';
+}
+resizeCanvas();
+
+class Line {
+    constructor() {
+        this.pen = {
+            y: -GRID_SIZE,
+            sleep: randomInt(2*ctx.height/GRID_SIZE),
+        }
+        this.eraser = {
+            y: -GRID_SIZE,
+            sleep: randomInt(2*ctx.height/GRID_SIZE),
+        }
+        this.text = texts[randomInt(texts.length)]
+        this.text_cursor = 0
+        this.last_char = ''
+        this._char = ''
+    }
+
+    get char(){
+        this.last_char = this._char
+        this._char = this.text[this.text_cursor]
+
+        this.text_cursor++
+        if (this.text_cursor >= this.text.length) {
+            this.text_cursor = 0
+            this.text = sample(texts)
+        }
+
+        return this._char
+    }
+
+    step() {
+        [this.pen, this.eraser].forEach(ele => {
+            if (ele.sleep > 0) {
+                ele.sleep -= 1
+                return
+            }
+
+            ele.y += GRID_SIZE
+            if (ele.y > ctx.height + GRID_SIZE * 12) {
+                ele.y = - GRID_SIZE
+                ele.sleep = randomInt(20)
+            }
+        })
+    }
+
+    draw(x, ctx) {
+        if (this.last_char) {
+            ctx.font = `${FONT_SIZE}px sans-serif`;
+            ctx.fillStyle = "rgb(0,0,0)";
+            ctx.fillRect(x, this.pen.y - 2*GRID_SIZE, GRID_SIZE, GRID_SIZE);
+            ctx.fillStyle = "rgb(70,200,70)";
+            ctx.fillText(this.last_char, x + GRID_SIZE/2, this.pen.y - GRID_SIZE - 4);
+        }
+
+        let trail_length = 2
+        for (let offset = 1; offset <= trail_length; offset++) {
+            ctx.fillStyle = `rgba(0,0,0,${offset/trail_length})`;
+            ctx.fillRect(x, this.eraser.y - offset * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+        }
+
+        ctx.fillStyle = "rgb(0,0,0)";
+        ctx.fillRect(x, this.pen.y - GRID_SIZE, GRID_SIZE, GRID_SIZE);
+        ctx.font = `bold ${FONT_SIZE}px sans-serif`;
+        ctx.fillStyle = "rgb(220,255,220)";
+        ctx.fillText(this.char, x + GRID_SIZE/2, this.pen.y - 4);
+    }
+}
+const lines = Array.from({length: 1}, () => new Line());
+
+let last_update_ts = 0;
+function draw(ts) {
+    if (ts - last_update_ts < STEP_MS) {
+        window.requestAnimationFrame(draw)
+        return
+    }
+
+    last_update_ts = ts
+
+    let x = 0;
+    let line_idx = 0;
+    while (x < window.innerWidth + FONT_SIZE) {
+        let line = lines[line_idx] || new Line();
+        lines[line_idx] = line;
+
+        line.step()
+        line.draw(x, ctx)
+
+        line_idx++;
+        x += GRID_SIZE;
+    }
+
+    ctx.fillStyle = `blue`;
+    ctx.fillRect(0,-GRID_SIZE,GRID_SIZE, GRID_SIZE)
+    window.requestAnimationFrame(draw)
+}
+
+window.onresize = resizeCanvas
+window.requestAnimationFrame(draw)
+
+</script>
+</body>
+</html>
