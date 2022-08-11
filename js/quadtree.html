@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quadtree</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=1">
+<style>
+:root,html,body{
+    margin:0;
+    padding:0;
+    background-color: black;
+    overflow: hidden;
+}
+#cv{
+    width: 100%;
+    height: 100%;
+}
+</style>
+</head>
+<body id="body">
+
+<script>
+function randomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function sample(ary) {
+  return ary[randomInt(ary.length)];
+}
+</script>
+<script>
+const body = document.getElementById('body');
+const canvas = document.createElement('canvas')
+const ctx = canvas.getContext('2d');
+
+const OBJ_MAX_COUNT = 5000
+const PRESSURE_CAP = 25
+
+const OBJ_MAX_SIZE = 10
+const OBJ_MIN_SIZE = 3
+const TREE_MIN_WIDTH = 10
+const TREE_MIN_HEIGHT = 10
+const TREE_NODE_CAPACITY = 10
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    ctx.width = window.innerWidth
+    ctx.height = window.innerHeight
+    ctx.textAlign = 'center';
+}
+function resetTree() {
+    tree_root = new TreeNode(0, 0, ctx.width, ctx.height)
+    objects.forEach(obj => tree_root.insert(obj))
+}
+
+class Obj {
+    constructor() {
+        this.id = Math.random() * Date.now()
+        let deg = Math.random()
+        this.x = ctx.width  / 2 + ctx.width  / 3 * Math.sin( deg * 2 * Math.PI )
+        this.y = ctx.height / 2 + ctx.height / 3 * Math.cos( deg * 2 * Math.PI )
+
+        this.vx = -25 + Math.random() * 50
+        this.vy = -25 + Math.random() * 50
+
+        this.size = Math.random() * (OBJ_MAX_SIZE - OBJ_MIN_SIZE) + OBJ_MIN_SIZE
+
+        this.tree_node = null
+        this.hot = false
+        this.ttl = Math.random() * 5
+    }
+
+    colidesWith(obj) {
+        if (obj === this) return
+
+        if (!obj) throw ["not obj", obj]
+
+        const delta_x = obj.x - this.x
+        const delta_y = obj.y - this.y
+        const total_radius = obj.size/2 + this.size/2
+
+        if (delta_x > total_radius || delta_y > total_radius ) return
+        if (delta_x * delta_x + delta_y * delta_y > total_radius * total_radius)  return
+
+        this.hot = true
+    }
+
+    reset() {
+        this.hot = false
+    }
+}
+
+class TreeNode {
+    constructor(x, y, width, height) {
+        this.x = x
+        this.y = y
+        this.width = width
+        this.height = height
+        this.parent = null
+
+        this.objs = []
+        this.nodes = []
+
+        this.half_width = this.width / 2
+        this.half_height = this.height / 2
+
+        this.middle_x = this.x + this.half_width
+        this.middle_y = this.y + this.half_height
+    }
+
+    get is_leaf() { return this.nodes.length == 0 }
+
+    get tree_size() {
+        return this.nodes.reduce((sum, node) => sum + node.tree_size, this.objs.length)
+    }
+
+    insert(obj) {
+        if (!this.containsPos(obj.x, obj.y) && this.parent) {
+            throw ["Insert to bad location", obj, this]
+        }
+
+        if (this.is_leaf && this.objs.length >= TREE_NODE_CAPACITY
+         && this.width > TREE_MIN_WIDTH && this.height > TREE_MIN_HEIGHT) {
+            this.split()
+        }
+
+        if (this.is_leaf) {
+            this.objs.push(obj)
+            obj.tree_node = this
+            return
+        }
+
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i]
+            if (node.containsPos(obj.x, obj.y)) {
+                return node.insert(obj)
+            }
+        }
+
+        throw ["Insert 時找不到應該放進哪個 node", obj, this]
+    }
+
+    split () {
+        // 四等分的樹葉
+        for (let x_offset=0; x_offset<=this.half_width; x_offset+=this.half_width) {
+            for (let y_offset=0; y_offset<=this.half_height; y_offset+=this.half_height) {
+                const x = this.x + x_offset
+                const y = this.y + y_offset
+                const new_node = new TreeNode(x, y, this.half_width, this.half_height)
+                new_node.parent = this
+                this.nodes.push(new_node)
+            }
+        }
+
+        // 把自己手上的 obj 全部重塞
+        while (this.objs.length) {
+            const obj = this.objs.pop()
+            if (obj) {
+                tree_root.insert(obj)
+            }
+        }
+    }
+
+    update () {
+        if (this.parent && this.objs.length) {
+            for (let idx = 0; idx < this.objs.length; idx++) {
+                const obj = this.objs[idx]
+                if (obj && !this.containsPos(obj.x, obj.y)) {
+                    this.objs = this.objs.filter(item => item !== obj)
+                    tree_root.insert(obj)
+                }
+            }
+        }
+
+        if (!this.is_leaf && this.tree_size < TREE_NODE_CAPACITY) {
+            this.objs = this.nodes.reduce((result, node) => result.concat(node.objs), [])
+            while (this.nodes.length) {
+                this.nodes.pop()
+            }
+        }
+
+        this.nodes.forEach(node => node.update())
+    }
+
+    query (x, y, size) {
+        if (this.is_leaf) {
+            return this.objs
+        }
+        // TODO 沒有處理 Size...
+        return this.sub_node_by_pos(x, y).query(x, y, size)
+    }
+
+    sub_node_by_pos(x, y) {
+        if (this.is_leaf) {
+            console.warn("不該對 leaf 查詢 sub-node")
+            return undefined
+        }
+        for (let i = 0; i < this.nodes.length; i++) {
+            if ( this.nodes[i].containsPos(x, y)) {
+                return this.nodes[i]
+            }
+        }
+
+        throw ["sub_node_by_pos fail", x, y, this.x, this.y,  this.x+this.width, this.y+this.height]
+    }
+
+    containsPos(x, y) {
+        return (this.x <= x && x <= this.x + this.width)
+            && (this.y <= y && y <= this.y + this.height)
+    }
+
+    draw () {
+        if (this.is_leaf) {
+            ctx.strokeStyle = 'rgba(192,192,32,0.5)'
+            ctx.lineWidth = 0.5
+            ctx.strokeRect(this.x, this.y, this.width, this.height)
+        }
+        this.nodes.forEach(node => node.draw())
+    }
+}
+
+let last_ts = 0
+function draw(ts) {
+    const times = [performance.now()]
+
+    window.requestAnimationFrame(draw)
+
+    if (!last_ts) {
+        last_ts = ts
+        return
+    }
+
+    const delta = ts - last_ts
+    last_ts = ts
+
+    times.push(performance.now())
+
+    // update location
+    const seeder_x = ctx.width / 2 + ctx.width / 3 * Math.sin( (ts % 7200) / 7200 * 2 * Math.PI )
+    const seeder_y = ctx.height / 2 + ctx.height / 3 * Math.cos( (ts % 7200) / 7200 * 2 * Math.PI )
+    objects.forEach(obj => {
+        obj.x += obj.vx * delta / 1000
+        obj.y += obj.vy * delta / 1000
+        obj.ttl -= delta / 1000
+
+        if (obj.x < 0|| obj.x > ctx.width || obj.y < 0 || obj.y > ctx.height || obj.ttl <= 0
+        ) {
+            obj.x = seeder_x
+            obj.y = seeder_y
+            obj.ttl = Math.random() * 5
+        }
+
+        obj.reset()
+    })
+
+    tree_root.update()
+    times.push(performance.now())
+
+    // update collision
+    // for (let i = 0; i < objects.length; i++) {
+    //     for (let j = 0; j < objects.length; j++) {
+    //         if (i == j)  continue
+    //         objects[i].colidesWith(objects[j])
+    //     }
+    // }
+
+    objects.forEach(obj => {
+        let tgts = tree_root.query(obj.x, obj.y, obj.size)
+        tgts.forEach(tgt => obj.colidesWith(tgt))
+    })
+
+    times.push(performance.now())
+
+    ctx.clearRect(0, 0, ctx.width, ctx.height)
+    tree_root.draw()
+
+    objects.forEach(obj => {
+        ctx.fillStyle = obj.hot ? 'rgba(255,0,0,0.6)' : 'rgba(255,255,255,0.4)'
+        ctx.beginPath()
+        ctx.arc(obj.x, obj.y, obj.size / 2, 0, Math.PI*2, true)
+        ctx.fill()
+    })
+
+    times.push(performance.now())
+
+    ctx.font = `14px monospace`;
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#ddd';
+    ctx.fillText(`Frame: ${delta.toFixed(3)}`, 30, 30)
+
+
+    let time_init = (times[1] - times[0]).toFixed(3)
+    let time_pos  = (times[2] - times[1]).toFixed(3)
+    let time_col  = (times[3] - times[2]).toFixed(3)
+    let time_draw = (times[4] - times[3]).toFixed(3)
+    let pressure = (times[4] - times[0]) / delta * 100
+    ctx.font = `11px monospace`;
+    ctx.fillText(`Init: ${time_init}, 位置: ${time_pos}, 碰撞: ${time_col}, 繪製: ${time_draw}`, 30, 50)
+    ctx.fillText(`物件數: ${objects.length}, 壓力: ${pressure.toFixed(2)}%`, 30, 70)
+
+    if ( objects.length < OBJ_MAX_COUNT && pressure < PRESSURE_CAP) {
+        const obj = new Obj()
+        objects.push(obj)
+        tree_root.insert(obj)
+    }
+}
+
+body.append(canvas)
+
+resizeCanvas();
+const objects = new Array(1000).fill().map(() => new Obj())
+let tree_root = new TreeNode(0, 0, ctx.width, ctx.height)
+resetTree()
+
+window.addEventListener('resize', resizeCanvas)
+window.addEventListener('resize', resetTree)
+window.requestAnimationFrame(draw)
+
+</script>
+</body>
+</html>
