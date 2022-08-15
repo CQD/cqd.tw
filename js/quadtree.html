@@ -34,7 +34,7 @@ const canvas = document.createElement('canvas')
 const ctx = canvas.getContext('2d');
 
 const OBJ_MAX_COUNT = 5000
-const PRESSURE_CAP = 25
+const PRESSURE_CAP = 23
 
 const OBJ_MAX_SIZE = 10
 const OBJ_MIN_SIZE = 3
@@ -54,21 +54,38 @@ function resetTree() {
     objects.forEach(obj => tree_root.insert(obj))
 }
 
+const seeder = {
+    x: ctx.width  / 2,
+    y: ctx.height / 2,
+
+    deg: 0,
+
+    updatePosition(delta) {
+        this.deg += delta / 7200
+        this.x = ctx.width  / 2 + ctx.width  / 3 * Math.sin(this.deg  * 2 * Math.PI )
+        this.y = ctx.height / 2 + ctx.height / 3 * Math.cos(this.deg  * 2 * Math.PI )
+    }
+}
+
 class Obj {
-    constructor() {
+    constructor(x, y, size) {
         this.id = Math.random() * Date.now()
         let deg = Math.random()
-        this.x = ctx.width  / 2 + ctx.width  / 3 * Math.sin( deg * 2 * Math.PI )
-        this.y = ctx.height / 2 + ctx.height / 3 * Math.cos( deg * 2 * Math.PI )
+        // this.x = x || ctx.width  / 2 + ctx.width  / 3 * Math.sin( deg * 2 * Math.PI )
+        // this.y = y || ctx.height / 2 + ctx.height / 3 * Math.cos( deg * 2 * Math.PI )
+        this.x = x || seeder.x
+        this.y = y || seeder.y
 
         this.vx = -25 + Math.random() * 50
         this.vy = -25 + Math.random() * 50
 
-        this.size = Math.random() * (OBJ_MAX_SIZE - OBJ_MIN_SIZE) + OBJ_MIN_SIZE
+        this.size = size || Math.random() * (OBJ_MAX_SIZE - OBJ_MIN_SIZE) + OBJ_MIN_SIZE
 
         this.tree_node = null
         this.hot = false
-        this.ttl = Math.random() * 5
+
+        this.max_age = 5
+        this.ttl = Math.random() * this.max_age
     }
 
     colidesWith(obj) {
@@ -86,8 +103,28 @@ class Obj {
         this.hot = true
     }
 
-    reset() {
+    updatePosition(delta) {
+        this.x += this.vx * delta / 1000
+        this.y += this.vy * delta / 1000
+        this.ttl -= delta / 1000
+
+        if (this.x < 0|| this.x > ctx.width || this.y < 0 || this.y > ctx.height || this.ttl <= 0
+        ) {
+            this.x = seeder.x
+            this.y = seeder.y
+            this.ttl = Math.random() * 5
+        }
+
         this.hot = false
+    }
+
+    draw() {
+        let alpha = this.hot ? 0.6 : 0.4
+        if (this.ttl < 0.5) alpha *= (this.ttl / 0.5)
+        ctx.fillStyle = this.hot ? `rgba(255,0,0,${alpha})` : `rgba(255,255,255,${alpha})`
+        ctx.beginPath()
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI*2, true)
+        ctx.fill()
     }
 }
 
@@ -138,7 +175,10 @@ class TreeNode {
             }
         }
 
-        throw ["Insert 時找不到應該放進哪個 node", obj, this]
+        throw ["Insert 時找不到應該放進哪個 node，強制移動到 seeder 上", obj, this]
+        obj.x = seeder.x
+        obj.y = seeder.y
+        this.insert(obj)
     }
 
     split () {
@@ -221,9 +261,9 @@ class TreeNode {
 }
 
 let last_ts = 0
+let last_pressure = 0
 function draw(ts) {
     const times = [performance.now()]
-
     window.requestAnimationFrame(draw)
 
     if (!last_ts) {
@@ -237,33 +277,11 @@ function draw(ts) {
     times.push(performance.now())
 
     // update location
-    const seeder_x = ctx.width / 2 + ctx.width / 3 * Math.sin( (ts % 7200) / 7200 * 2 * Math.PI )
-    const seeder_y = ctx.height / 2 + ctx.height / 3 * Math.cos( (ts % 7200) / 7200 * 2 * Math.PI )
-    objects.forEach(obj => {
-        obj.x += obj.vx * delta / 1000
-        obj.y += obj.vy * delta / 1000
-        obj.ttl -= delta / 1000
-
-        if (obj.x < 0|| obj.x > ctx.width || obj.y < 0 || obj.y > ctx.height || obj.ttl <= 0
-        ) {
-            obj.x = seeder_x
-            obj.y = seeder_y
-            obj.ttl = Math.random() * 5
-        }
-
-        obj.reset()
-    })
+    seeder.updatePosition(delta)
+    objects.forEach(obj => obj.updatePosition(delta))
 
     tree_root.update()
     times.push(performance.now())
-
-    // update collision
-    // for (let i = 0; i < objects.length; i++) {
-    //     for (let j = 0; j < objects.length; j++) {
-    //         if (i == j)  continue
-    //         objects[i].colidesWith(objects[j])
-    //     }
-    // }
 
     objects.forEach(obj => {
         let tgts = tree_root.query(obj.x, obj.y, obj.size)
@@ -274,13 +292,7 @@ function draw(ts) {
 
     ctx.clearRect(0, 0, ctx.width, ctx.height)
     tree_root.draw()
-
-    objects.forEach(obj => {
-        ctx.fillStyle = obj.hot ? 'rgba(255,0,0,0.6)' : 'rgba(255,255,255,0.4)'
-        ctx.beginPath()
-        ctx.arc(obj.x, obj.y, obj.size / 2, 0, Math.PI*2, true)
-        ctx.fill()
-    })
+    objects.forEach(obj => obj.draw())
 
     times.push(performance.now())
 
@@ -299,17 +311,23 @@ function draw(ts) {
     ctx.fillText(`Init: ${time_init}, 位置: ${time_pos}, 碰撞: ${time_col}, 繪製: ${time_draw}`, 30, 50)
     ctx.fillText(`物件數: ${objects.length}, 壓力: ${pressure.toFixed(2)}%`, 30, 70)
 
-    if ( objects.length < OBJ_MAX_COUNT && pressure < PRESSURE_CAP) {
-        const obj = new Obj()
-        objects.push(obj)
-        tree_root.insert(obj)
+    const recent_pressure = Math.max(pressure, last_pressure)
+    if ( objects.length < OBJ_MAX_COUNT && recent_pressure < PRESSURE_CAP) {
+        let obj_to_add = 10 * (100 - recent_pressure) / 100
+        for (let i = 0; i < obj_to_add; i++) {
+            const obj = new Obj(seeder.x, seeder.y)
+            objects.push(obj)
+            tree_root.insert(obj)
+        }
     }
+    last_pressure = pressure
 }
 
 body.append(canvas)
 
 resizeCanvas();
-const objects = new Array(1000).fill().map(() => new Obj())
+seeder.updatePosition(0)
+const objects = new Array(10).fill().map(() => new Obj())
 let tree_root = new TreeNode(0, 0, ctx.width, ctx.height)
 resetTree()
 
