@@ -18,6 +18,7 @@ html, body {
     background-image: linear-gradient(#e3e6e9, #a3a6a9);
     min-height:100vh;
     font-family: sans-serif;
+    --width:600px;
 }
 body{
     padding:20px 0 90px;
@@ -30,7 +31,7 @@ a, a:link, a:visited{
 
 .card {
     background-color:#353535;
-    max-width:550px;
+    max-width:var(--width);
     margin:10px auto;
     box-sizing:border-box;
     padding:1em;
@@ -97,7 +98,19 @@ a.btn{
     font-family:monospace;
 }
 
-@media screen and (max-width: 520px) {
+.btn_list{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    justify-content:center;
+    max-width:var(--width);
+    margin:0 auto;
+}
+.btn_list .card{
+    margin:0;
+}
+
+@media screen and (max-width: 540px) {
     body{
         padding:0 0 20px;
     }
@@ -106,6 +119,10 @@ a.btn{
     }
     .profile{
         margin-bottom: 30px;
+    }
+    .btn_list{
+        grid-template-columns: 1fr;
+        margin: 0 10px 10px;
     }
 }
 </style>
@@ -129,6 +146,7 @@ a.btn{
 
 </div>
 
+<div class="btn_list">
 <div class='card btn'><a href='https://xkcd.tw'>xkcd 中文翻譯</a></div>
 <div class='card btn'><a href='https://textgen.cqd.tw/'>中文假文產生器</a></div>
 <div class='card btn'><a href='https://reservoir.cqd.tw/'>台灣水庫即時水情與歷年統計</a></div>
@@ -136,5 +154,6 @@ a.btn{
 <div class='card btn'><a href='https://hw.hiigara.net'>萬艦齊發</a></div>
 <div class='card btn'><a href='https://medium.com/@CQD/3fdc14b9f01e'>頂天立地：愛孩子就要支持蘿莉控</a></div>
 <div class='card btn'><a href='https://feed.cqd.tw/'>非官方 Feed</a></div>
+</div>
 </body>
 </html>
